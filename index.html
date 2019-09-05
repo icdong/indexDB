@@ -1,0 +1,145 @@
+<!--
+ * @Description: indexDB
+ * @Author: Daito Chai
+ * @Date: 2019-09-02 21:14:29
+ * @LastEditTime: 2019-09-05 22:27:12
+ * @LastEditors: Please set LastEditors
+ -->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>indexDB</title>
+    </head>
+    <body>
+        <button id="init">初始化</button>
+        <button id="insert">新增几条数据</button>
+        <button id="select">查找一条记录</button>
+        <button id="delete">删除一条记录</button>
+        <button id="update">更新一条记录</button>
+        <button id="clear">清除所有表数据</button>
+    
+        <script type="text/javascript">
+
+            let $id = (id) => document.querySelector(id)
+
+            let dbObject = {
+                init: function init(params){
+                    if (!window.indexedDB) {
+                        window.alert('浏览器不支持IndexDB！')
+                        return
+                    }
+                    this.name = params.name
+                    this.version = params.version
+                    this.storeName = params.storeName
+            
+                    let request = indexedDB.open(this.name, this.version)
+                    //打开数据库失败
+                    request.onerror = function(event) { 
+                        console.log(event.target.errorCode)
+                    }
+                    request.onupgradeneeded = function(event) {
+                        this.db = event.target.result 
+                        this.db.createObjectStore(dbObject.storeName)
+                    }
+                    //打开数据库成功
+                    request.onsuccess = function(event) {
+                        dbObject.db = event.target.result
+                    }
+                },
+                /**
+                 * 增加和编辑操作 
+                 */
+                put: function(params, key) {
+                    // 打开事务
+                    let transaction = dbObject.db.transaction(dbObject.storeName, 'readwrite')
+                    // 搜索数据库表
+                    let store = transaction.objectStore(dbObject.storeName)
+                    // 操作
+                    let request = store.put(params, key)
+                    request.onsuccess = function() {
+                        console.log('添加成功')
+                    }
+                    request.onerror = function(event) {
+                        console.log(event)
+                    }
+                },
+                /**
+                 * 删除数据 
+                 */
+                delete: function(id) {
+                    let transaction = dbObject.db.transaction(dbObject.storeName, 'readwrite')
+                    let store = transaction.objectStore(dbObject.storeName)
+                    let request = store.delete(id)
+                    request.onsuccess = function() {
+                        console.log('删除成功')
+                    }
+                },
+                /**
+                 * 查询操作 
+                 */
+                select: function(key) {
+                    let transaction = dbObject.db.transaction(dbObject.storeName, 'readwrite')
+                    let store = transaction.objectStore(dbObject.storeName)
+                    let request = key ? store.get(key) : store.getAll()
+                    request.onsuccess = function () {
+                        console.log(request.result)
+                    }
+                },
+                /**
+                 * 清除整个对象存储(表)
+                 */
+                clear: function() {
+                    let transaction = dbObject.db.transaction(dbObject.storeName, 'readwrite')
+                    let store = transaction.objectStore(dbObject.storeName)
+                    let request = store.clear()
+                    request.onsuccess = function(){
+                        console.log('清除成功')
+                    }
+                }
+            }
+
+            window.dbObject = dbObject
+
+            let init = $id('#init')
+            init.onclick = function() {
+                let DB = {
+                    name: 'CCD',// 数据库名称
+                    version: 1,// 数据库版本
+                    storeName: 'BigArray',// 数据库表名
+                }
+                dbObject.init(DB)
+            }
+
+            let insert = $id('#insert')
+            insert.onclick = function() {
+                // 填入初始值
+                dbObject.put({array: [1,2,3]}, 1)
+                dbObject.put({array: [4,5,6]}, 2)
+                dbObject.put({array: [7,8,9]}, 3)
+            }
+
+            let select = $id('#select')
+            select.onclick = function() {
+                dbObject.select(3)
+            }
+
+            let update = $id('#update')
+            update.onclick = function() {
+                dbObject.put({array: [3,3,3]}, 1)
+            }
+
+            let deleteData = $id('#delete')
+            deleteData.onclick = function() {
+                dbObject.delete(3)
+            }
+
+            let clear = $id('#clear')
+            clear.onclick = function() {
+                dbObject.clear()
+            }
+            
+        </script>
+
+    </body>
+</html>
